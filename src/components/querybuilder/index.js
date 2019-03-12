@@ -6,7 +6,7 @@
 
 import React from "react";
 import axios from "axios";
-import { PrimaryButton, ActionButton } from "office-ui-fabric-react/lib/Button";
+import { PrimaryButton, ActionButton, DefaultButton } from "office-ui-fabric-react/lib/Button";
 import { TextField } from "office-ui-fabric-react/lib/TextField";
 import { Dropdown } from "office-ui-fabric-react/lib/Dropdown";
 import { PivotItem, Pivot } from 'office-ui-fabric-react/lib/Pivot';
@@ -54,6 +54,33 @@ class QueryBuilderApp extends React.Component {
     this.props.handlePivotClick('results')
   };
 
+  updateDesignCatalog = () => {
+    const { selectedDatabase: { filepath, formviewfolder, fvfName }, query } = this.props;
+
+    let dqlquery = queryToString(query, 0, formviewfolder, fvfName);
+    let fields = columnsToString(query.selectedColumns);
+
+    this.setState({
+      updateRunning: true
+    });
+
+    const context = process.env.NODE_ENV === 'development' ? `/dqlexplorer.nsf/` : ``;
+
+    axios
+      .get(
+        `${context}updateDesignCatalog?openagent&query=${escape(
+          dqlquery
+        )}&fields=${fields}&database=${filepath}`,
+        {},
+      )
+      .then(response => {
+        this.setState({
+          updateRunning: false
+        });
+         // this.props.onChangeResults(response.data);
+      });
+  };
+  
   runDQLQuery = () => {
     const { selectedDatabase: { filepath, formviewfolder, fvfName }, query } = this.props;
 
@@ -411,6 +438,18 @@ End Sub
             required={true}
           />
         </div>
+
+        <DefaultButton
+          className='runQueryButton' iconProps={{ iconName: 'share-square' }}
+          onClick={this.updateDesignCatalog}
+          disabled={ updateRunning ? true : false}
+        >
+          Update Design Catalog
+        </DefaultButton>
+
+        { updateRunning && 
+          <Spinner size={SpinnerSize.medium} label="Updating Design Catalog..." ariaLive="assertive" labelPosition="right" />
+        }
 
         <PrimaryButton
           className='runQueryButton'
